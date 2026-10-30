@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f1f6f2">
+  <title>Buss fra Parken – Halden</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #183229;
+      background: #f1f6f2;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --green: #176b48;
+      --green-dark: #123d2e;
+      --muted: #687b72;
+      --line: #e6eee8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      padding: 64px 20px;
+      background:
+        radial-gradient(ellipse at 50% -15%, #d9eadd 0, transparent 48%),
+        linear-gradient(180deg, #f1f6f2 0%, #f8faf8 100%);
+    }
+
+    main {
+      width: min(100%, 660px);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 7px 12px;
+      border: 1px solid #d5e7d9;
+      border-radius: 999px;
+      background: #ffffffb8;
+      color: var(--green);
+      font-size: 0.74rem;
+      font-weight: 750;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #3ca46c;
+      box-shadow: 0 0 0 3px #3ca46c1c;
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      color: #183c2d;
+      font-size: clamp(2.4rem, 8vw, 3.5rem);
+      letter-spacing: -0.065em;
+      line-height: 1.05;
+    }
+
+    .subtitle {
+      margin: 13px 0 32px;
+      color: var(--muted);
+      font-size: 1.03rem;
+      line-height: 1.55;
+    }
+
+    .departures-card {
+      overflow: hidden;
+      border: 1px solid #e1ebe3;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 22px 60px rgb(27 68 45 / 10%), 0 3px 10px rgb(27 68 45 / 4%);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 24px;
+      background: linear-gradient(115deg, var(--green-dark), #1c6847);
+      color: #fff;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid #ffffff26;
+      border-radius: 999px;
+      background: #ffffff12;
+      color: #e4f2e9;
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f2c65c;
+    }
+
+    .status-dot.active {
+      background: #61dfa0;
+      box-shadow: 0 0 0 3px #61dfa02b;
+    }
+
+    .status-dot.error {
+      background: #cf4c42;
+    }
+
+    .departure-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .departure {
+      display: grid;
+      grid-template-columns: 66px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 88px;
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--line);
+      transition: background-color 160ms ease;
+    }
+
+    .departure:hover {
+      background: #f8fbf8;
+    }
+
+    .departure:last-child {
+      border-bottom: 0;
+    }
+
+    .line-number {
+      display: grid;
+      min-width: 48px;
+      min-height: 42px;
+      place-items: center;
+      padding: 0 8px;
+      border: 1px solid #d9ebde;
+      border-radius: 13px;
+      background: linear-gradient(145deg, #eff8f1, #e4f2e8);
+      color: var(--green);
+      font-size: 1rem;
+      font-weight: 800;
+      box-shadow: inset 0 1px #fff;
+    }
+
+    .destination {
+      overflow: hidden;
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stop-name {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .departure-time {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .clock-time {
+      display: block;
+      color: #183c2d;
+      font-size: 1.22rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .countdown {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #f1f6f2;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .message {
+      padding: 34px 22px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .message[hidden] {
+      display: none;
+    }
+
+    .retry-button {
+      margin-top: 14px;
+      padding: 9px 14px;
+      border: 1px solid #d5e0d7;
+      border-radius: 10px;
+      background: #fff;
+      color: var(--green);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .retry-button:hover {
+      background: #f2f7f3;
+    }
+
+    .updated {
+      margin: 16px 3px 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: right;
+    }
+
+    footer {
+      margin-top: 26px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    footer a {
+      color: var(--green);
+      font-weight: 700;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 38px 14px;
+      }
+
+      .card-header,
+      .departure {
+        padding-right: 16px;
+        padding-left: 16px;
+      }
+
+      .departure {
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        gap: 11px;
+      }
+
+      .line-number {
+        min-width: 44px;
+      }
+
+      .destination {
+        font-size: 0.9rem;
+      }
+
+      .card-header {
+        padding-top: 17px;
+        padding-bottom: 17px;
+      }
+
+      .live-status {
+        gap: 6px;
+        padding: 6px 8px;
+        font-size: 0.69rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Halden · Busstider</p>
+    <h1>Buss fra Parken</h1>
+    <p class="subtitle" id="today">Neste avganger fra Parken bussholdeplass.</p>
+
+    <section class="departures-card" aria-labelledby="departures-heading">
+      <header class="card-header">
+        <h2 id="departures-heading">Neste avganger</h2>
+        <span class="live-status" aria-live="polite">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Henter tider …</span>
+        </span>
+      </header>
+      <ul class="departure-list" id="departure-list" aria-live="polite"></ul>
+      <div class="message" id="message" role="status">Henter avgangstider fra Entur …</div>
+      <div class="message" id="error-message" role="alert" hidden>
+        Klarte ikke å hente avgangstidene akkurat nå.
+        <br>
+        <button class="retry-button" id="retry-button" type="button">Prøv igjen</button>
+      </div>
+    </section>
+
+    <p class="updated" id="updated"></p>
+    <footer>
+      Tidene leveres av <a href="https://entur.no/" target="_blank" rel="noreferrer">Entur</a>
+      og oppdateres automatisk hvert minutt.
+    </footer>
+  </main>
+
+  <script>
+    const endpoint = "https://api.entur.io/journey-planner/v3/graphql";
+    const query = `{
+      stopPlace(id: "NSR:StopPlace:2569") {
+        estimatedCalls(numberOfDepartures: 20, timeRange: 86400) {
+          expectedDepartureTime
+          aimedDepartureTime
+          quay { name }
+          destinationDisplay { frontText }
+          serviceJourney {
+            journeyPattern {
+              line { publicCode }
+            }
+          }
+        }
+      }
+    }`;
+
+    const departureList = document.querySelector("#departure-list");
+    const message = document.querySelector("#message");
+    const errorMessage = document.querySelector("#error-message");
+    const statusText = document.querySelector("#status-text");
+    const statusDot = document.querySelector("#status-dot");
+    const updated = document.querySelector("#updated");
+
+    document.querySelector("#today").textContent = new Intl.DateTimeFormat("nb-NO", {
+      weekday: "long",
+      day: "numeric",
+      month: "long"
+    }).format(new Date()) + " · Neste avganger fra Parken bussholdeplass.";
+
+    function formatTime(value) {
+      return new Intl.DateTimeFormat("nb-NO", {
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function formatCountdown(value) {
+      const minutes = Math.round((new Date(value).getTime() - Date.now()) / 60000);
+      if (minutes <= 0) return "Nå";
+      if (minutes === 1) return "Om 1 min";
+      if (minutes < 60) return `Om ${minutes} min`;
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return remainingMinutes ? `Om ${hours} t ${remainingMinutes} min` : `Om ${hours} t`;
+    }
+
+    function setStatus(text, state) {
+      statusText.textContent = text;
+      statusDot.className = `status-dot${state ? ` ${state}` : ""}`;
+    }
+
+    function renderDepartures(calls) {
+      const upcoming = calls
+        .filter((call) => new Date(call.expectedDepartureTime).getTime() >= Date.now() - 60000)
+        .sort((a, b) => new Date(a.expectedDepartureTime) - new Date(b.expectedDepartureTime))
+        .slice(0, 12);
+
+      departureList.replaceChildren();
+      if (!upcoming.length) {
+        message.textContent = "Ingen flere avganger er tilgjengelige akkurat nå.";
+        message.hidden = false;
+        return;
+      }
+
+      message.hidden = true;
+      for (const call of upcoming) {
+        const row = document.createElement("li");
+        row.className = "departure";
+
+        const line = document.createElement("span");
+        line.className = "line-number";
+        line.textContent = call.serviceJourney?.journeyPattern?.line?.publicCode || "Buss";
+
+        const destinationInfo = document.createElement("div");
+        const destination = document.createElement("p");
+        destination.className = "destination";
+        destination.textContent = call.destinationDisplay?.frontText || "Ukjent retning";
+        const stop = document.createElement("p");
+        stop.className = "stop-name";
+        stop.textContent = call.quay?.name || "Parken";
+        destinationInfo.append(destination, stop);
+
+        const timeInfo = document.createElement("div");
+        timeInfo.className = "departure-time";
+        const time = document.createElement("time");
+        time.className = "clock-time";
+        time.dateTime = call.expectedDepartureTime;
+        time.textContent = formatTime(call.expectedDepartureTime);
+        const countdown = document.createElement("span");
+        countdown.className = "countdown";
+        countdown.dataset.departure = call.expectedDepartureTime;
+        countdown.textContent = formatCountdown(call.expectedDepartureTime);
+        timeInfo.append(time, countdown);
+
+        row.append(line, destinationInfo, timeInfo);
+        departureList.append(row);
+      }
+    }
+
+    async function loadDepartures() {
+      setStatus("Oppdaterer …", "");
+      errorMessage.hidden = true;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "ET-Client-Name": "parken-halden-busstider"
+          },
+          body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Entur svarte med HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.errors?.length) {
+          throw new Error(result.errors.map((error) => error.message).join(", "));
+        }
+
+        renderDepartures(result.data.stopPlace.estimatedCalls);
+        updated.textContent = `Sist oppdatert kl. ${formatTime(new Date())}`;
+        setStatus("Direkte fra Entur", "active");
+      } catch (error) {
+        console.error("Kunne ikke hente avgangstider fra Entur:", error);
+        if (!departureList.childElementCount) {
+          message.hidden = true;
+          errorMessage.hidden = false;
+        }
+        setStatus("Tilkobling feilet", "error");
+      }
+    }
+
+    document.querySelector("#retry-button").addEventListener("click", loadDepartures);
+    loadDepartures();
+    window.setInterval(loadDepartures, 60000);
+    window.setInterval(() => {
+      document.querySelectorAll(".countdown").forEach((element) => {
+        element.textContent = formatCountdown(element.dataset.departure);
+      });
+    }, 15000);
+  </script>
+</body>
+</html>
